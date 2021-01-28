@@ -4,6 +4,7 @@
  * Copyright (c) 2013, The Linux Foundation. All rights reserved.
  */
 
+#include <linux/acpi.h>
 #include <linux/delay.h>
 #include <linux/err.h>
 #include <linux/io.h>
@@ -1372,6 +1373,7 @@ int msm_pinctrl_probe(struct platform_device *pdev,
 {
 	struct msm_pinctrl *pctrl;
 	struct resource *res;
+	void __iomem *base;
 	int ret;
 	int i;
 
@@ -1388,7 +1390,7 @@ int msm_pinctrl_probe(struct platform_device *pdev,
 
 	raw_spin_lock_init(&pctrl->lock);
 
-	if (soc_data->tiles) {
+	if (soc_data->tiles && !has_acpi_companion(&pdev->dev)) {
 		for (i = 0; i < soc_data->ntiles; i++) {
 			res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
 							   soc_data->tiles[i]);
@@ -1398,9 +1400,17 @@ int msm_pinctrl_probe(struct platform_device *pdev,
 		}
 	} else {
 		res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-		pctrl->regs[0] = devm_ioremap_resource(&pdev->dev, res);
-		if (IS_ERR(pctrl->regs[0]))
-			return PTR_ERR(pctrl->regs[0]);
+		base = devm_ioremap_resource(&pdev->dev, res);
+		if (IS_ERR(base))
+			return PTR_ERR(base);
+
+		if (soc_data->tiles) {
+			for (i = 0; i < soc_data->ntiles; i++)
+				pctrl->regs[i] = base +
+						 soc_data->tile_offsets[i];
+		} else {
+			pctrl->regs[0] = base;
+		}
 
 		pctrl->phys_base[0] = res->start;
 	}
