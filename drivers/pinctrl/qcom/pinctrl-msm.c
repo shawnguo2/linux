@@ -36,6 +36,12 @@
 #define MAX_NR_TILES 4
 #define PS_HOLD_OFFSET 0x820
 
+#define MSM_NO_PULL		0
+#define MSM_PULL_DOWN		1
+#define MSM_KEEPER		2
+#define MSM_PULL_UP_NO_KEEPER	2
+#define MSM_PULL_UP		3
+
 /**
  * struct msm_pinctrl - state for a pinctrl-msm device
  * @dev:            device handle.
@@ -193,6 +199,10 @@ static int msm_pinmux_set_mux(struct pinctrl_dev *pctldev,
 	val = msm_readl_ctl(pctrl, g);
 	val &= ~mask;
 	val |= i << g->mux_bit;
+	if (has_acpi_companion(pctrl->dev) && i == 0) {
+		val &= ~(3 << g->pull_bit);
+		val |= MSM_PULL_UP << g->pull_bit;
+	}
 	msm_writel_ctl(val, pctrl, g);
 
 	raw_spin_unlock_irqrestore(&pctrl->lock, flags);
@@ -257,12 +267,6 @@ static int msm_config_reg(struct msm_pinctrl *pctrl,
 
 	return 0;
 }
-
-#define MSM_NO_PULL		0
-#define MSM_PULL_DOWN		1
-#define MSM_KEEPER		2
-#define MSM_PULL_UP_NO_KEEPER	2
-#define MSM_PULL_UP		3
 
 static unsigned msm_regval_to_drive(u32 val)
 {
