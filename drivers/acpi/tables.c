@@ -662,7 +662,7 @@ acpi_table_initrd_override(struct acpi_table_header *existing_table,
 		 * acpi_table_initrd_scan() and check the revision.
 		 */
 		if (test_and_set_bit(table_index, acpi_initrd_installed) ||
-		    existing_table->oem_revision >= table->oem_revision) {
+		    existing_table->oem_revision != table->oem_revision) {
 			acpi_os_unmap_memory(table, ACPI_HEADER_SIZE);
 			goto next_table;
 		}
