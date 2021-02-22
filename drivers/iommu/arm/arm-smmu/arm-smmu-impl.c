@@ -4,6 +4,7 @@
 
 #define pr_fmt(fmt) "arm-smmu: " fmt
 
+#include <linux/acpi_iort.h>
 #include <linux/bitfield.h>
 #include <linux/of.h>
 
@@ -190,6 +191,34 @@ static const struct arm_smmu_impl mrvl_mmu500_impl = {
 	.reset = arm_mmu500_reset,
 };
 
+#ifdef CONFIG_ACPI
+static bool is_qcom_iort(struct arm_smmu_device *smmu)
+{
+	struct acpi_table_header *iort;
+	acpi_status status;
+	bool ret = false;
+
+	status = acpi_get_table(ACPI_SIG_IORT, 0, &iort);
+	if (ACPI_FAILURE(status)) {
+		dev_err(smmu->dev, "failed to get IORT\n");
+		goto done;
+	}
+
+	if (strncmp(iort->asl_compiler_id, "QCOM", 4) == 0) {
+		ret = true;
+		goto done;
+	}
+
+done:
+	acpi_put_table(iort);
+	return ret;
+}
+#else
+static bool is_qcom_iort(struct arm_smmu_device *smmu)
+{
+	return false;
+}
+#endif
 
 struct arm_smmu_device *arm_smmu_impl_init(struct arm_smmu_device *smmu)
 {
@@ -221,6 +250,9 @@ struct arm_smmu_device *arm_smmu_impl_init(struct arm_smmu_device *smmu)
 	    of_device_is_compatible(np, "qcom,sc7180-smmu-500") ||
 	    of_device_is_compatible(np, "qcom,sm8150-smmu-500") ||
 	    of_device_is_compatible(np, "qcom,sm8250-smmu-500"))
+		return qcom_smmu_impl_init(smmu);
+
+	if (!np && is_qcom_iort(smmu))
 		return qcom_smmu_impl_init(smmu);
 
 	if (of_device_is_compatible(np, "marvell,ap806-smmu-500"))
