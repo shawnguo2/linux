@@ -19,6 +19,7 @@
 #include <linux/init.h>
 #include <linux/debugfs.h>
 #include <linux/device.h>
+#include <linux/dmi.h>
 #include <linux/efi.h>
 #include <linux/of.h>
 #include <linux/initrd.h>
@@ -357,6 +358,17 @@ static int refresh_nv_rng_seed_notification(struct notifier_block *nb, unsigned 
 }
 static struct notifier_block refresh_nv_rng_seed_nb = { .notifier_call = refresh_nv_rng_seed_notification };
 
+static const struct dmi_system_id efi_rt_reset_broken[] = {
+	{
+		.ident = "Lenovo Flex 5G",
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
+			DMI_MATCH(DMI_PRODUCT_FAMILY, "Flex 5G"),
+		},
+	},
+	{ } /* terminator */
+};
+
 /*
  * We register the efi subsystem with the firmware subsystem and the
  * efivars subsystem with the efi subsystem, if the system was booted with
@@ -368,6 +380,9 @@ static int __init efisubsys_init(void)
 
 	if (!efi_enabled(EFI_RUNTIME_SERVICES))
 		efi.runtime_supported_mask = 0;
+
+	if (dmi_check_system(efi_rt_reset_broken))
+		efi.runtime_supported_mask &= ~EFI_RT_SUPPORTED_RESET_SYSTEM;
 
 	if (!efi_enabled(EFI_BOOT))
 		return 0;
