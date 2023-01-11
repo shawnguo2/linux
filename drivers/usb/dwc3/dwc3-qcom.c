@@ -1045,6 +1045,9 @@ static const struct acpi_device_id dwc3_qcom_acpi_match[] = {
 	{ "QCOM0304", (unsigned long)&sdm845_acpi_urs_pdata },
 	{ "QCOM0497", (unsigned long)&sdm845_acpi_urs_pdata },
 	{ "QCOM04A6", (unsigned long)&sdm845_acpi_pdata },
+	{ "QCOM068B", (unsigned long)&sdm845_acpi_urs_pdata },
+	{ "QCOM068C", (unsigned long)&sdm845_acpi_urs_pdata },
+	{ "QCOM06A1", (unsigned long)&sdm845_acpi_pdata },
 	{ },
 };
 MODULE_DEVICE_TABLE(acpi, dwc3_qcom_acpi_match);
