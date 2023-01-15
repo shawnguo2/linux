@@ -522,8 +522,12 @@ static const struct of_device_id __maybe_unused qcom_smmu_impl_of_match[] = {
 
 #ifdef CONFIG_ACPI
 static struct acpi_platform_list qcom_acpi_platlist[] = {
+	/* Lenovo Flex 5G */
 	{ "LENOVO", "CB-01   ", 0x8180, ACPI_SIG_IORT, equal, "QCOM SMMU" },
+	/* Microsoft Surface Pro X */
 	{ "QCOM  ", "QCOMEDK2", 0x8180, ACPI_SIG_IORT, equal, "QCOM SMMU" },
+	/* Microsoft Surface Pro 9 (5G) and Windows Dev Kit 2023 */
+	{ "QCOM  ", "QCOMEDK2", 0x8280, ACPI_SIG_IORT, equal, "QCOM SMMU" },
 	{ }
 };
 #endif
