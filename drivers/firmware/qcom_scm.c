@@ -2,6 +2,7 @@
 /* Copyright (c) 2010,2015,2019 The Linux Foundation. All rights reserved.
  * Copyright (C) 2015 Linaro Ltd.
  */
+#include <linux/acpi.h>
 #include <linux/platform_device.h>
 #include <linux/init.h>
 #include <linux/cpumask.h>
@@ -1383,10 +1384,12 @@ static int qcom_scm_probe(struct platform_device *pdev)
 
 	clks = (unsigned long)of_device_get_match_data(&pdev->dev);
 
-	scm->path = devm_of_icc_get(&pdev->dev, NULL);
-	if (IS_ERR(scm->path))
-		return dev_err_probe(&pdev->dev, PTR_ERR(scm->path),
-				     "failed to acquire interconnect path\n");
+	if (pdev->dev.of_node) {
+		scm->path = devm_of_icc_get(&pdev->dev, NULL);
+		if (IS_ERR(scm->path))
+			return dev_err_probe(&pdev->dev, PTR_ERR(scm->path),
+					     "failed to acquire interconnect path\n");
+	}
 
 	scm->core_clk = devm_clk_get(&pdev->dev, "core");
 	if (IS_ERR(scm->core_clk)) {
@@ -1499,10 +1502,21 @@ static const struct of_device_id qcom_scm_dt_match[] = {
 };
 MODULE_DEVICE_TABLE(of, qcom_scm_dt_match);
 
+#ifdef CONFIG_ACPI
+static const struct acpi_device_id qcom_scm_acpi_match[] = {
+	{ .id = "QCOM04DD" }, /* SC8280XP */
+	{ .id = "QCOM040B" }, /* SC8180X */
+	{ .id = "QCOM0214" }, /* SDM850 */
+	{ },
+};
+MODULE_DEVICE_TABLE(acpi, qcom_scm_acpi_match);
+#endif
+
 static struct platform_driver qcom_scm_driver = {
 	.driver = {
 		.name	= "qcom_scm",
 		.of_match_table = qcom_scm_dt_match,
+		.acpi_match_table = ACPI_PTR(qcom_scm_acpi_match),
 		.suppress_bind_attrs = true,
 	},
 	.probe = qcom_scm_probe,
