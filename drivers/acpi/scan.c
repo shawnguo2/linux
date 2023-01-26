@@ -1444,6 +1444,9 @@ bool acpi_dma_supported(const struct acpi_device *adev)
 	if (!IS_ENABLED(CONFIG_ACPI_CCA_REQUIRED))
 		return true;
 
+	if (IS_ENABLED(CONFIG_ARCH_QCOM))
+		return true;
+
 	return false;
 }
 
