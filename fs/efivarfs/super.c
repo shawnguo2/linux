@@ -246,6 +246,9 @@ static void efivarfs_kill_sb(struct super_block *sb)
 {
 	kill_litter_super(sb);
 
+	if (!efivar_is_available())
+		return;
+
 	/* Remove all entries and destroy */
 	efivar_entry_iter(efivarfs_destroy, &efivarfs_list, NULL);
 }
