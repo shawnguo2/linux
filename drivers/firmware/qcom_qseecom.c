@@ -8,6 +8,7 @@
  */
 
 #include <asm/barrier.h>
+#include <linux/acpi.h>
 #include <linux/device.h>
 #include <linux/kernel.h>
 #include <linux/mfd/core.h>
@@ -232,6 +233,15 @@ static const struct of_device_id qseecom_dt_match[] = {
 };
 MODULE_DEVICE_TABLE(of, qseecom_dt_match);
 
+#ifdef CONFIG_ACPI
+static const struct acpi_device_id qseecom_acpi_match[] = {
+	{ .id = "QCOM04DE", .driver_data = (kernel_ulong_t)&qseecom_data_sc8280xp }, /* SC8280XP */
+	{ .id = "QCOM0476", .driver_data = (kernel_ulong_t)&qseecom_data_sc8280xp }, /* SC8180X */
+	{ .id = "QCOM02BB", .driver_data = (kernel_ulong_t)&qseecom_data_sc8280xp }, /* SDM850 */
+	{ },
+};
+MODULE_DEVICE_TABLE(acpi, qseecom_acpi_match);
+#endif
 
 /* -- Driver setup. --------------------------------------------------------- */
 
@@ -282,11 +292,11 @@ static int qseecom_probe(struct platform_device *pdev)
 	int status;
 
 	/* Get platform data. */
-	data = of_device_get_match_data(&pdev->dev);
+	data = device_get_match_data(&pdev->dev);
 
 	/* Set up device link. */
 	status = qseecom_setup_scm_link(pdev);
-	if (status)
+	if (pdev->dev.of_node && status)
 		return status;
 
 	/* Set up QSEECOM device. */
@@ -313,6 +323,7 @@ static struct platform_driver qseecom_driver = {
 	.driver = {
 		.name = "qcom_qseecom",
 		.of_match_table = qseecom_dt_match,
+		.acpi_match_table = ACPI_PTR(qseecom_acpi_match),
 		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 	},
 };
