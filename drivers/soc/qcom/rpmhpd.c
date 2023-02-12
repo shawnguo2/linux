@@ -508,6 +508,7 @@ MODULE_DEVICE_TABLE(of, rpmhpd_match_table);
 static int rpmhpd_send_corner(struct rpmhpd *pd, int state,
 			      unsigned int corner, bool sync)
 {
+#if 0
 	struct tcs_cmd cmd = {
 		.addr = pd->addr,
 		.data = corner,
@@ -521,6 +522,9 @@ static int rpmhpd_send_corner(struct rpmhpd *pd, int state,
 		return rpmh_write(pd->dev, state, &cmd, 1);
 	else
 		return rpmh_write_async(pd->dev, state, &cmd, 1);
+#else
+	return 0;
+#endif
 }
 
 static void to_active_sleep(struct rpmhpd *pd, unsigned int corner,
