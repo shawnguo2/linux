@@ -109,16 +109,42 @@ int pcibios_root_bridge_prepare(struct pci_host_bridge *bridge)
 	return 0;
 }
 
+#define QCOM_DSDT_QUIRK "Host bridge windows in PNP0A03 _CRS"
+
+static struct acpi_platform_list qcom_platlist[] = {
+	/* Thinkpad X13s */
+	{ "LENOVO", "SDM8280 ", 0, ACPI_SIG_DSDT, all_versions, QCOM_DSDT_QUIRK },
+	/* Microsoft Surface Pro 9 (5G) and Windows Dev Kit 2023 */
+	{ "QCOMM ", "SDM8280 ", 0, ACPI_SIG_DSDT, all_versions, QCOM_DSDT_QUIRK },
+	/* Microsoft Surface Pro X */
+	{ "QCOMM ", "SDM8180 ", 0, ACPI_SIG_DSDT, all_versions, QCOM_DSDT_QUIRK },
+	{ }
+};
+
 static int pci_acpi_root_prepare_resources(struct acpi_pci_root_info *ci)
 {
 	struct resource_entry *entry, *tmp;
 	int status;
+	int idx;
 
 	status = acpi_pci_probe_root_resources(ci);
+
+	/*
+	 * Most arm64 platforms that do not run Windows describe host bridge
+	 * registers in PNP0A03 _CRS resources, but some like Qualcomm
+	 * Snapdragon Windows laptops describe host bridge windows in there.
+	 * We do not want to destroy the resources for these platforms.
+	 */
+	idx = acpi_match_platform_list(qcom_platlist);
+	if (idx >= 0)
+		goto done;
+
 	resource_list_for_each_entry_safe(entry, tmp, &ci->resources) {
 		if (!(entry->res->flags & IORESOURCE_WINDOW))
 			resource_list_destroy_entry(entry);
 	}
+
+done:
 	return status;
 }
 
