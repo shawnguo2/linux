@@ -1199,6 +1199,14 @@ static int acpi_idle_lpi_enter(struct cpuidle_device *dev,
 	return -EINVAL;
 }
 
+#define QCOM_DSDT_QUIRK	"Broken KryoGold0.C4+L3Cluster.D4"
+
+static struct acpi_platform_list qcom_platlist[] = {
+	/* Microsoft Surface Pro 9 (5G) and Windows Dev Kit 2023 */
+	{ "QCOMM ", "SDM8280 ", 0, ACPI_SIG_DSDT, all_versions, QCOM_DSDT_QUIRK },
+	{ }
+};
+
 static int acpi_processor_setup_lpi_states(struct acpi_processor *pr)
 {
 	int i;
@@ -1224,6 +1232,12 @@ static int acpi_processor_setup_lpi_states(struct acpi_processor *pr)
 	}
 
 	drv->state_count = i;
+
+	i = acpi_match_platform_list(qcom_platlist);
+	if (i >= 0) {
+		/* Disable broken 'KryoGold0.C4+L3Cluster.D4' state */
+		drv->states[3].flags |= CPUIDLE_FLAG_OFF;
+	}
 
 	return 0;
 }
